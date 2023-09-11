@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "redblack_bst.h"
-#include "redblack_draw.h"
+//#include "redblack_draw.h"
 
 typedef struct {
     uint64_t roleid;
@@ -40,8 +40,13 @@ free_func(void *data) {
         free(data);
 }
 
+static uint64_t
+get_score_func(void *data) {
+    return ((Score *)data)->score;
+}
+
 int main() {
-    RedBlackBST *tree = redblack_new(cmp_func, update_func, free_func);
+    RedBlackBST *tree = redblack_new(cmp_func, update_func, free_func, get_score_func);
     for(int i = 0;i < 10;i++) {
         Score *score = malloc(sizeof(*score));
         score->roleid = i;
