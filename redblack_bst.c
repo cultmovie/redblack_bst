@@ -1,13 +1,13 @@
 #include <stdlib.h>
+#include <assert.h>
 #include "redblack_bst.h"
 
 typedef enum {RED, BLACK} Color;
 
 struct redblack_node {
-    Key key;
-    Value value;
+    void *data;
     struct redblack_node *left, *right;
-    int sub_node_num;
+    size_t sub_node_num;
     Color color;
 };
 
@@ -15,6 +15,10 @@ typedef struct redblack_node RedBlackNode;
 
 struct redblack_bst {
     RedBlackNode *root;
+    size_t node_num;
+    CmpFunc cmp_func;
+    UpdateFunc update_func;
+    FreeFunc free_func;
 };
 
 static bool is_red(RedBlackNode *node);
@@ -23,51 +27,94 @@ static int get_sub_node_num(RedBlackNode *node);
 static RedBlackNode *rotate_left(RedBlackNode *node);
 static RedBlackNode *rotate_right(RedBlackNode *node);
 static void flip_colors(RedBlackNode *node);
-static RedBlackNode *new_node(Key key, Value value, Color color);
-static RedBlackNode *insert(RedBlackNode *node, Key key, Value value);
-static int cmp_key(Key key1, Key key2);
-static Value get(RedBlackNode *node, Key key, bool *is_exist);
+static RedBlackNode *new_node(void *data, Color color);
+static RedBlackNode *insert(RedBlackBST *tree, RedBlackNode *node, void *data);
+static void *get(RedBlackBST *tree, RedBlackNode *node, void *data);
+static RedBlackNode *get_min(RedBlackNode *node);
+static RedBlackNode *get_max(RedBlackNode *node);
+static RedBlackNode *free_node(RedBlackBST *tree, RedBlackNode *node);
 
 RedBlackBST *
-redblack_new() {
+redblack_new(CmpFunc cmp_func, UpdateFunc update_func, FreeFunc free_func) {
     RedBlackBST *tree = malloc(sizeof(*tree));
     tree->root = NULL;
+    tree->cmp_func = cmp_func;
+    tree->update_func = update_func;
+    tree->free_func = free_func;
     return tree;
 }
 
 void
-redblack_insert(RedBlackBST *tree, Key key, Value value) {
-    tree->root = insert(tree->root, key, value);
+redblack_free(RedBlackBST *tree) {
+    tree->root = free_node(tree, tree->root);
+    free(tree);
+}
+
+void
+redblack_insert(RedBlackBST *tree, void *data) {
+    tree->root = insert(tree, tree->root, data);
     tree->root->color = BLACK;
 }
 
-Value
-redblack_get(RedBlackBST *tree, Key key, bool *is_exist) {
-    return get(tree->root, key, is_exist);
+void *
+redblack_get(RedBlackBST *tree, void *data) {
+    return get(tree, tree->root, data);
 }
 
-static Value
-get(RedBlackNode *node, Key key, bool *is_exist) {
-    if(node == NULL) {
-        *is_exist = false;
-        return 0;
-    }
-    switch(cmp_key(key, node->key)) {
-    case 0:
-        *is_exist = true;
-        return node->value;
-    case 1:
-        return get(node->right, key, is_exist);
-    case -1:
-        return get(node->left, key, is_exist);
-    }
+void *
+redblack_get_min(RedBlackBST *tree) {
+    assert(tree->root);
+    return get_min(tree->root)->data;
+}
+
+void *
+redblack_get_max(RedBlackBST *tree) {
+    assert(tree->root);
+    return get_max(tree->root)->data;
 }
 
 static RedBlackNode *
-new_node(Key key, Value value, Color color) {
+free_node(RedBlackBST *tree, RedBlackNode *node) {
+    if(node == NULL)
+        return NULL;
+    node->left = free_node(tree, node->left);
+    node->right = free_node(tree, node->right);
+    tree->free_func(node->data);
+    free(node);
+    return NULL;
+}
+
+static RedBlackNode *
+get_max(RedBlackNode *node) {
+    if(node->right == NULL)
+        return node;
+    return get_max(node->right);
+}
+
+static RedBlackNode *
+get_min(RedBlackNode *node) {
+    if(node->left == NULL)
+        return node;
+    return get_min(node->left);
+}
+
+static void *
+get(RedBlackBST *tree, RedBlackNode *node, void *data) {
+    if(node == NULL)
+        return NULL;
+    int result = tree->cmp_func(data, node->data);
+    if(result == 0)
+        return node->data;
+    else if(result > 0)
+        return get(tree, node->right, data);
+    else if (result < 0)
+        return get(tree, node->left, data);
+}
+
+static RedBlackNode *
+new_node(void *data, Color color) {
     RedBlackNode *node = malloc(sizeof(*node));
-    node->key = key;
-    node->value = value;
+    node->data = data;
     node->color = color;
     node->left = NULL;
     node->right = NULL;
@@ -75,29 +122,19 @@ new_node(Key key, Value value, Color color) {
     return node;
 }
 
-static int
-cmp_key(Key key1, Key key2) {
-    if(key1 == key2)
-        return 0;
-    else if(key1 > key2)
-        return 1;
-    else if(key1 < key2)
-        return -1;
-}
-
 static RedBlackNode *
-insert(RedBlackNode *node, Key key, Value value) {
+insert(RedBlackBST *tree, RedBlackNode *node, void *data) {
     if(node == NULL) 
-        return new_node(key, value, RED);
-    switch(cmp_key(key, node->key)) {
+        return new_node(data, RED);
+    switch(tree->cmp_func(data, node->data)) {
     case 0:
-        node->value = value;
+        tree->update_func(node->data, data);
         break;
     case 1:
-        node->right = insert(node->right, key, value);
+        node->right = insert(tree, node->right, data);
         break;
     case -1:
-        node->left = insert(node->left, key, value);
+        node->left = insert(tree, node->left, data);
         break;
     }
     if(is_red(node->right) && is_black(node->left))

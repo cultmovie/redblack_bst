@@ -4,11 +4,16 @@
 #include <stdbool.h>
 
 typedef struct redblack_bst RedBlackBST;
-typedef int64_t Key;
-typedef int64_t Value;
 
-RedBlackBST *redblack_new();
-void redblack_insert(RedBlackBST *tree, Key key, Value value);
-Value redblack_get(RedBlackBST *tree, Key key, bool *is_exist);
+typedef int (*CmpFunc)(void *data1, void *data2);
+typedef void (*UpdateFunc)(void *data1, void *data2);
+typedef void (*FreeFunc)(void *data);
+
+RedBlackBST *redblack_new(CmpFunc cmp_func, UpdateFunc update_func, FreeFunc free_func);
+void redblack_free(RedBlackBST *tree);
+void redblack_insert(RedBlackBST *tree, void *data);
+void *redblack_get(RedBlackBST *tree, void *data);
+void *redblack_get_min(RedBlackBST *tree);
+void *redblack_get_max(RedBlackBST *tree);
 
 #endif
