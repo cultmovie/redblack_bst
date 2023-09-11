@@ -107,7 +107,7 @@ get(RedBlackBST *tree, RedBlackNode *node, void *data) {
         return node->data;
     else if(result > 0)
         return get(tree, node->right, data);
-    else if (result < 0)
+    else
         return get(tree, node->left, data);
 }
 

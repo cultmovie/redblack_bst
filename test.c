@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "redblack_bst.h"
+#include "redblack_draw.h"
 
 typedef struct {
     uint64_t roleid;
@@ -21,7 +22,7 @@ cmp_func(void *data1, void *data2) {
         return 1;
     else if(score1->score < score2->score)
         return -1;
-    else if(score1->score == score2->score)
+    else
         return score1->roleid < score2->roleid ? -1 : 1;
 }
 
@@ -47,6 +48,7 @@ int main() {
         score->score = i+10;
         redblack_insert(tree, score);
     }
+    redblack_draw(tree);
     for(int i = 0;i < 10;i++) {
         Score score = {i, i+10};
         Score *result_score = redblack_get(tree, &score);
