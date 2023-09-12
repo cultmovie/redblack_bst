@@ -65,7 +65,8 @@ int main() {
         snprintf(buffer, sizeof(buffer), fmt, i);
         redblack_draw(tree, buffer);
     }
-    redblack_delete_min(tree);
+    //redblack_delete_min(tree);
+    redblack_delete_max(tree);
     redblack_draw(tree, "redblack_tree_10.svg");
     for(int i = 0;i < 10;i++) {
         Score score = {i, i+10};

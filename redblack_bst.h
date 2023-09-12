@@ -28,5 +28,6 @@ size_t redblack_get_sub_node_num(RedBlackNode *node);
 bool redblack_is_red(RedBlackNode *node);
 bool redblack_is_empty(RedBlackBST *tree);
 void redblack_delete_min(RedBlackBST *tree);
+void redblack_delete_max(RedBlackBST *tree);
 
 #endif
