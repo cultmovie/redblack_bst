@@ -12,15 +12,13 @@ struct redblack_node {
     Color color;
 };
 
-typedef struct redblack_node RedBlackNode;
-
 struct redblack_bst {
     RedBlackNode *root;
     size_t node_num;
     CmpFunc cmp_func;
     UpdateFunc update_func;
     FreeFunc free_func;
-    GetScoreFunc get_score_func;
+    GetDrawStrFunc get_draw_str_func;
 };
 
 static bool is_red(RedBlackNode *node);
@@ -35,17 +33,17 @@ static void *get(RedBlackBST *tree, RedBlackNode *node, void *data);
 static RedBlackNode *get_min(RedBlackNode *node);
 static RedBlackNode *get_max(RedBlackNode *node);
 static RedBlackNode *free_node(RedBlackBST *tree, RedBlackNode *node);
-static Agnode_t *draw_tree(RedBlackBST *tree, RedBlackNode *node, Agraph_t *g, int *i);
 static void traverse_tree(RedBlackBST *tree, RedBlackNode *node);
 
 RedBlackBST *
-redblack_new(CmpFunc cmp_func, UpdateFunc update_func, FreeFunc free_func, GetScoreFunc get_score_func) {
+redblack_new(CmpFunc cmp_func, UpdateFunc update_func,
+        FreeFunc free_func, GetDrawStrFunc get_draw_str_func) {
     RedBlackBST *tree = malloc(sizeof(*tree));
     tree->root = NULL;
     tree->cmp_func = cmp_func;
     tree->update_func = update_func;
     tree->free_func = free_func;
-    tree->get_score_func = get_score_func;
+    tree->get_draw_str_func = get_draw_str_func;
     return tree;
 }
 
@@ -83,74 +81,46 @@ redblack_traverse(RedBlackBST *tree) {
     traverse_tree(tree, tree->root);
 }
 
-void
-redblack_draw(RedBlackBST *tree) {
-    GVC_t *gvc = gvContext();
-    Agraph_t *g = agopen("redblack_tree", Agundirected, 0);
-    int i = 0;
-    draw_tree(tree, tree->root, g, &i);
-    gvLayout(gvc, g, "dot");
-    gvRenderFilename(gvc, g, "svg", "redblack.svg");
-    gvFreeLayout(gvc, g);
-    agclose(g);
-    gvFreeContext(gvc);
+
+RedBlackNode *
+redblack_get_root(RedBlackBST *tree) {
+    return tree->root;
+}
+
+RedBlackNode *
+redblack_get_left(RedBlackNode *node) {
+    return node->left;
+}
+
+RedBlackNode *
+redblack_get_right(RedBlackNode *node) {
+    return node->right;
+}
+
+void *
+redblack_get_data(RedBlackNode *node) {
+    return node->data;
+}
+
+const char *
+redblack_get_draw_str(RedBlackBST *tree, RedBlackNode *node) {
+    return tree->get_draw_str_func(node->data);
+}
+
+bool
+redblack_is_red(RedBlackNode *node) {
+    return is_red(node);
 }
 
 static void
 traverse_tree(RedBlackBST *tree, RedBlackNode *node) {
     if(node == NULL)
         return;
-    printf("score:%"PRIu64"\n", tree->get_score_func(node->data));
+    const char *draw_str = tree->get_draw_str_func(node->data);
+    printf("%s", draw_str);
+    free((char *)draw_str);
     traverse_tree(tree, node->left);
     traverse_tree(tree, node->right);
-}
-
-static Agnode_t *
-draw_tree(RedBlackBST *tree, RedBlackNode *node, Agraph_t *g, int *i) {
-    if(node == NULL)
-        return NULL;
-    (*i)++;
-    const char *fmt = "node_%d";
-    int sz = snprintf(NULL, 0, fmt, *i);
-    char buffer[sz + 1];
-    snprintf(buffer, sizeof(buffer), fmt, *i);
-
-    Agnode_t *n = agnode(g, buffer, 1);
-
-    const char *score_fmt = "%"PRIu64;
-    uint64_t score = tree->get_score_func(node->data);
-    int sz1 = snprintf(NULL, 0, score_fmt, score);
-    char score_buffer[sz1 + 1];
-    snprintf(score_buffer, sizeof(score_buffer), score_fmt, score);
-    agsafeset(n, "label", score_buffer, "0");
-    printf("score:%"PRIu64",name:%s\n", score, buffer);
-
-    Agnode_t *left_n = draw_tree(tree, node->left, g, i);
-    if(left_n){
-        Agedge_t *e = agedge(g, n, left_n, 0, 1);
-        agattr(g, AGEDGE, "style", "filled");
-        agattr(g, AGEDGE, "color", "black");
-        if(is_red(node->left)) {
-            agset(e, "color", "red");
-            agset(e, "style", "bold");
-        }
-        else
-            agset(e, "color", "black");
-    }
-
-    Agnode_t *right_n = draw_tree(tree, node->right, g, i);
-    if(right_n) {
-        Agedge_t * e = agedge(g, n, right_n, 0, 1);
-        agattr(g, AGEDGE, "style", "filled");
-        agattr(g, AGEDGE, "color", "black");
-        if(is_red(node->right)) {
-            agset(e, "color", "red");
-            agset(e, "style", "bold");
-        }
-        else
-            agset(e, "color", "black");
-    }
-    return n;
 }
 
 static RedBlackNode *

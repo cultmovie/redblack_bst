@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "redblack_bst.h"
-//#include "redblack_draw.h"
+#include "redblack_draw.h"
 
 typedef struct {
     uint64_t roleid;
@@ -40,20 +40,31 @@ free_func(void *data) {
         free(data);
 }
 
-static uint64_t
-get_score_func(void *data) {
-    return ((Score *)data)->score;
+static const char *
+get_draw_str_func(void *data) {
+    Score *score = (Score *)data;
+	const char *draw_fmt = "score:%"PRIu64"\nroleid:%"PRIu64"\n";
+    int sz = snprintf(NULL, 0, draw_fmt, score->score, score->roleid);
+    size_t buffer_size = sizeof(char)*(sz + 1);
+    char *draw_buffer = malloc(buffer_size);
+    snprintf(draw_buffer, buffer_size, draw_fmt, score->score, score->roleid);
+    return (const char *)draw_buffer;
 }
 
 int main() {
-    RedBlackBST *tree = redblack_new(cmp_func, update_func, free_func, get_score_func);
+    RedBlackBST *tree = redblack_new(cmp_func, update_func, free_func, get_draw_str_func);
     for(int i = 0;i < 10;i++) {
         Score *score = malloc(sizeof(*score));
         score->roleid = i;
         score->score = i+10;
         redblack_insert(tree, score);
+
+        const char *fmt = "redblack_tree_%d.svg";
+        int sz = snprintf(NULL, 0, fmt, i);
+        char buffer[sz + 1];
+        snprintf(buffer, sizeof(buffer), fmt, i);
+        redblack_draw(tree, buffer);
     }
-    redblack_draw(tree);
     for(int i = 0;i < 10;i++) {
         Score score = {i, i+10};
         Score *result_score = redblack_get(tree, &score);
