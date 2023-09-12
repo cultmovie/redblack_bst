@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
 #include "redblack_bst.h"
 
 typedef enum {RED, BLACK} Color;
@@ -33,6 +34,9 @@ static RedBlackNode *get_min(RedBlackNode *node);
 static RedBlackNode *get_max(RedBlackNode *node);
 static RedBlackNode *free_node(RedBlackBST *tree, RedBlackNode *node);
 static void traverse_tree(RedBlackBST *tree, RedBlackNode *node);
+static RedBlackNode *balance(RedBlackNode *node);
+static RedBlackNode *delete_min(RedBlackNode *node);
+static RedBlackNode *move_red_from_right_to_left(RedBlackNode *node);
 
 RedBlackBST *
 redblack_new(CmpFunc cmp_func, UpdateFunc update_func,
@@ -82,7 +86,7 @@ redblack_traverse(RedBlackBST *tree) {
 
 bool
 redblack_is_empty(RedBlackBST *tree) {
-    tree->root == NULL ? true : false;
+    return tree->root == NULL;
 }
 
 RedBlackNode *
@@ -118,6 +122,50 @@ redblack_get_sub_node_num(RedBlackNode *node) {
 bool
 redblack_is_red(RedBlackNode *node) {
     return is_red(node);
+}
+
+void
+redblack_delete_min(RedBlackBST *tree) {
+    if(redblack_is_empty(tree))
+        return;
+    if(!is_red(tree->root->left) && !is_red(tree->root->right))
+        tree->root->color = RED;
+    tree->root = delete_min(tree->root);
+    if(!redblack_is_empty(tree))
+        tree->root->color = BLACK;
+}
+
+static RedBlackNode *
+delete_min(RedBlackNode *node) {
+    if(node->left == NULL)
+        return NULL;
+    if(!is_red(node->left) && !is_red(node->left->left))
+        node = move_red_from_right_to_left(node);
+    node->left = delete_min(node->left);
+    return balance(node);
+}
+
+static RedBlackNode *
+move_red_from_right_to_left(RedBlackNode *node) {
+    flip_colors(node);
+    if(is_red(node->right->left)) {
+        node->right = rotate_right(node->right);
+        node = rotate_left(node);
+        flip_colors(node);
+    }
+    return node;
+}
+
+static RedBlackNode *
+balance(RedBlackNode *node) {
+    if(is_red(node->right) && is_black(node->left))
+        node = rotate_left(node);
+    if(is_red(node->left) && is_red(node->left->left))
+        node = rotate_right(node);
+    if(is_red(node->left) && is_red(node->right))
+        flip_colors(node);
+    node->sub_node_num = get_sub_node_num(node->left) + get_sub_node_num(node->right) + 1;
+    return node;
 }
 
 static void
@@ -184,25 +232,15 @@ static RedBlackNode *
 insert(RedBlackBST *tree, RedBlackNode *node, void *data) {
     if(node == NULL) 
         return new_node(data, RED);
-    switch(tree->cmp_func(data, node->data)) {
-    case 0:
+    int result = tree->cmp_func(data, node->data);
+    if(result == 0)
         tree->update_func(node->data, data);
-        break;
-    case 1:
+    else if(result > 0)
         node->right = insert(tree, node->right, data);
-        break;
-    case -1:
+    else if(result < 0)
         node->left = insert(tree, node->left, data);
-        break;
-    }
-    if(is_red(node->right) && is_black(node->left))
-        node = rotate_left(node);
-    if(is_red(node->left) && is_red(node->left->left))
-        node = rotate_right(node);
-    if(is_red(node->left) && is_red(node->right))
-        flip_colors(node);
-    node->sub_node_num = get_sub_node_num(node->left) + get_sub_node_num(node->right) + 1;
-    return node;
+
+    return balance(node);
 }
 
 static bool
@@ -252,7 +290,7 @@ rotate_right(RedBlackNode *node) {
 
 static void
 flip_colors(RedBlackNode *node) {
-    node->color = RED;
-    node->left->color = BLACK;
-    node->right->color = BLACK;
+    node->color = !node->color;
+    node->left->color = !node->left->color;
+    node->right->color = !node->right->color;
 }
