@@ -28,6 +28,13 @@ draw_tree(RedBlackBST *tree, RedBlackNode *node, Agraph_t *g, int *i) {
     snprintf(buffer, sizeof(buffer), fmt, *i);
 
     Agnode_t *n = agnode(g, buffer, 1);
+    if(redblack_get_root(tree) == node) {
+        agattr(g, AGNODE, "color", "black");
+        if(redblack_is_red(node))
+            agset(n, "color", "red");
+        else
+            agset(n, "color", "black");
+    }
 
     const char *str = redblack_get_draw_str(tree, node);
     agsafeset(n, "label", str, "0");
