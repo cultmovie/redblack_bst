@@ -26,5 +26,6 @@ void *redblack_get_data(RedBlackNode *node);
 const char *redblack_get_draw_str(RedBlackBST *tree, RedBlackNode *node);
 size_t redblack_get_sub_node_num(RedBlackNode *node);
 bool redblack_is_red(RedBlackNode *node);
+bool redblack_is_empty(RedBlackBST *tree);
 
 #endif

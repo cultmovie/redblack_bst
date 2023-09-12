@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <assert.h>
-#include <graphviz/gvc.h>
 #include "redblack_bst.h"
 
 typedef enum {RED, BLACK} Color;
@@ -81,6 +80,10 @@ redblack_traverse(RedBlackBST *tree) {
     traverse_tree(tree, tree->root);
 }
 
+bool
+redblack_is_empty(RedBlackBST *tree) {
+    tree->root == NULL ? true : false;
+}
 
 RedBlackNode *
 redblack_get_root(RedBlackBST *tree) {
