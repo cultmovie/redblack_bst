@@ -22,7 +22,6 @@ struct redblack_bst {
 };
 
 static bool is_red(RedBlackNode *node);
-static bool is_black(RedBlackNode *node);
 static int get_sub_node_num(RedBlackNode *node);
 static RedBlackNode *rotate_left(RedBlackNode *node);
 static RedBlackNode *rotate_right(RedBlackNode *node);
@@ -158,7 +157,7 @@ move_red_from_right_to_left(RedBlackNode *node) {
 
 static RedBlackNode *
 balance(RedBlackNode *node) {
-    if(is_red(node->right) && is_black(node->left))
+    if(is_red(node->right) && !is_red(node->left))
         node = rotate_left(node);
     if(is_red(node->left) && is_red(node->left->left))
         node = rotate_right(node);
@@ -248,13 +247,6 @@ is_red(RedBlackNode *node) {
     if(node == NULL)
         return false;
     return node->color == RED ? true : false;
-}
-
-static bool
-is_black(RedBlackNode *node) {
-    if(node == NULL)
-        return true;
-    return node->color == BLACK ? true : false;
 }
 
 static int
