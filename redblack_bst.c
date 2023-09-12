@@ -39,6 +39,7 @@ static RedBlackNode *move_red_from_right_to_left(RedBlackNode *node);
 static RedBlackNode *delete_max(RedBlackBST *tree, RedBlackNode *node);
 static RedBlackNode *move_red_from_left_to_right(RedBlackNode *node);
 static void free_one_node(RedBlackBST *tree, RedBlackNode *node);
+static RedBlackNode *delete(RedBlackBST *tree, RedBlackNode *node, void *data);
 
 RedBlackBST *
 redblack_new(CmpFunc cmp_func, UpdateFunc update_func,
@@ -146,6 +147,52 @@ redblack_delete_max(RedBlackBST *tree) {
     tree->root = delete_max(tree, tree->root);
     if(!redblack_is_empty(tree))
         tree->root->color = BLACK;
+}
+
+void
+redblack_delete(RedBlackBST *tree, void *data) {
+    if(redblack_is_empty(tree))
+        return;
+    if(redblack_get(tree, data) == NULL)
+        return;
+    if(!is_red(tree->root->left) && !is_red(tree->root->right))
+        tree->root->color = RED;
+    tree->root = delete(tree, tree->root, data);
+    if(!redblack_is_empty(tree))
+        tree->root->color = BLACK;
+}
+
+static RedBlackNode *
+delete(RedBlackBST *tree, RedBlackNode *node, void *data) {
+    int result = tree->cmp_func(data, node->data);
+    if(result < 0) {
+        if(!is_red(node->left) && !is_red(node->left->left))
+            node = move_red_from_right_to_left(node);
+        RedBlackNode *old_left = NULL;
+        node->left = delete(tree, node->left, data);
+        if(node->left == NULL && old_left)
+            free_one_node(tree, old_left);
+    }
+    else {
+        if(is_red(node->left))
+            node = rotate_right(node);
+        if(result == 0 && node->right == NULL)
+            return NULL;
+        if(!is_red(node->right) && !is_red(node->right->left))
+            node = move_red_from_left_to_right(node);
+        if(result == 0) {
+            RedBlackNode *min_node = get_min(node->right);
+            tree->update_func(node->data, min_node->data);
+            node->right = delete_min(tree, node->right);
+        }
+        else {
+            RedBlackNode *old_right = NULL;
+            node->right = delete(tree, node->right, data);
+            if(node->right == NULL && old_right)
+                free_one_node(tree, old_right);
+        }
+    }
+    return balance(node);
 }
 
 static RedBlackNode *

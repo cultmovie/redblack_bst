@@ -30,8 +30,8 @@ static void
 update_func(void *data1, void *data2) {
     Score *score1 = (Score *)data1;
     Score *score2 = (Score *)data2;
-    assert(score1->roleid == score2->roleid);
     score1->score = score2->score;
+    score1->roleid = score2->roleid;
 }
 
 static void
@@ -66,7 +66,9 @@ int main() {
         redblack_draw(tree, buffer);
     }
     //redblack_delete_min(tree);
-    redblack_delete_max(tree);
+    //redblack_delete_max(tree);
+    Score score = {5, 15};
+    redblack_delete(tree, &score);
     redblack_draw(tree, "redblack_tree_10.svg");
     for(int i = 0;i < 10;i++) {
         Score score = {i, i+10};
