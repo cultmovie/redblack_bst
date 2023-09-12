@@ -41,13 +41,13 @@ free_func(void *data) {
 }
 
 static const char *
-get_draw_str_func(void *data) {
-    Score *score = (Score *)data;
-	const char *draw_fmt = "score:%"PRIu64"\nroleid:%"PRIu64"\n";
-    int sz = snprintf(NULL, 0, draw_fmt, score->score, score->roleid);
+get_draw_str_func(RedBlackNode *node) {
+    Score *score = (Score *)redblack_get_data(node);
+	const char *draw_fmt = "score:%"PRIu64"\nroleid:%"PRIu64"\nn:%ld\n";
+    int sz = snprintf(NULL, 0, draw_fmt, score->score, score->roleid, redblack_get_sub_node_num(node));
     size_t buffer_size = sizeof(char)*(sz + 1);
     char *draw_buffer = malloc(buffer_size);
-    snprintf(draw_buffer, buffer_size, draw_fmt, score->score, score->roleid);
+    snprintf(draw_buffer, buffer_size, draw_fmt, score->score, score->roleid, redblack_get_sub_node_num(node));
     return (const char *)draw_buffer;
 }
 

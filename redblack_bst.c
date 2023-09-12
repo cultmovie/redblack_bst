@@ -104,7 +104,12 @@ redblack_get_data(RedBlackNode *node) {
 
 const char *
 redblack_get_draw_str(RedBlackBST *tree, RedBlackNode *node) {
-    return tree->get_draw_str_func(node->data);
+    return tree->get_draw_str_func(node);
+}
+
+size_t
+redblack_get_sub_node_num(RedBlackNode *node) {
+    return node->sub_node_num;
 }
 
 bool
@@ -116,7 +121,7 @@ static void
 traverse_tree(RedBlackBST *tree, RedBlackNode *node) {
     if(node == NULL)
         return;
-    const char *draw_str = tree->get_draw_str_func(node->data);
+    const char *draw_str = tree->get_draw_str_func(node);
     printf("%s", draw_str);
     free((char *)draw_str);
     traverse_tree(tree, node->left);
