@@ -40,6 +40,7 @@ static RedBlackNode *delete_max(RedBlackBST *tree, RedBlackNode *node);
 static RedBlackNode *move_red_from_left_to_right(RedBlackNode *node);
 static void free_one_node(RedBlackBST *tree, RedBlackNode *node);
 static RedBlackNode *delete(RedBlackBST *tree, RedBlackNode *node, void *data);
+static RedBlackNode *get_by_rank(RedBlackNode *node, size_t rank);
 
 RedBlackBST *
 redblack_new(CmpFunc cmp_func, UpdateFunc update_func,
@@ -83,6 +84,49 @@ redblack_get_max(RedBlackBST *tree) {
 }
 
 void
+redblack_delete_min(RedBlackBST *tree) {
+    if(redblack_is_empty(tree))
+        return;
+    if(!is_red(tree->root->left) && !is_red(tree->root->right))
+        tree->root->color = RED;
+    tree->root = delete_min(tree, tree->root);
+    if(!redblack_is_empty(tree))
+        tree->root->color = BLACK;
+}
+
+void
+redblack_delete_max(RedBlackBST *tree) {
+    if(redblack_is_empty(tree))
+        return;
+    if(!is_red(tree->root->left) && !is_red(tree->root->right))
+        tree->root->color = RED;
+    tree->root = delete_max(tree, tree->root);
+    if(!redblack_is_empty(tree))
+        tree->root->color = BLACK;
+}
+
+void
+redblack_delete(RedBlackBST *tree, void *data) {
+    if(redblack_is_empty(tree))
+        return;
+    if(redblack_get(tree, data) == NULL)
+        return;
+    if(!is_red(tree->root->left) && !is_red(tree->root->right))
+        tree->root->color = RED;
+    tree->root = delete(tree, tree->root, data);
+    if(!redblack_is_empty(tree))
+        tree->root->color = BLACK;
+}
+
+void *
+redblack_get_by_rank(RedBlackBST *tree, size_t rank) {
+    RedBlackNode *node = get_by_rank(tree->root, rank);
+    if(node == NULL)
+        return NULL;
+    return node->data;
+}
+
+void
 redblack_traverse(RedBlackBST *tree) {
     traverse_tree(tree, tree->root);
 }
@@ -119,7 +163,7 @@ redblack_get_draw_str(RedBlackBST *tree, RedBlackNode *node) {
 
 size_t
 redblack_get_sub_node_num(RedBlackNode *node) {
-    return node->sub_node_num;
+    return get_sub_node_num(node);
 }
 
 bool
@@ -127,39 +171,17 @@ redblack_is_red(RedBlackNode *node) {
     return is_red(node);
 }
 
-void
-redblack_delete_min(RedBlackBST *tree) {
-    if(redblack_is_empty(tree))
-        return;
-    if(!is_red(tree->root->left) && !is_red(tree->root->right))
-        tree->root->color = RED;
-    tree->root = delete_min(tree, tree->root);
-    if(!redblack_is_empty(tree))
-        tree->root->color = BLACK;
-}
-
-void
-redblack_delete_max(RedBlackBST *tree) {
-    if(redblack_is_empty(tree))
-        return;
-    if(!is_red(tree->root->left) && !is_red(tree->root->right))
-        tree->root->color = RED;
-    tree->root = delete_max(tree, tree->root);
-    if(!redblack_is_empty(tree))
-        tree->root->color = BLACK;
-}
-
-void
-redblack_delete(RedBlackBST *tree, void *data) {
-    if(redblack_is_empty(tree))
-        return;
-    if(redblack_get(tree, data) == NULL)
-        return;
-    if(!is_red(tree->root->left) && !is_red(tree->root->right))
-        tree->root->color = RED;
-    tree->root = delete(tree, tree->root, data);
-    if(!redblack_is_empty(tree))
-        tree->root->color = BLACK;
+static RedBlackNode *
+get_by_rank(RedBlackNode *node, size_t rank) {
+    if(node == NULL)
+        return NULL;
+    size_t left_num = get_sub_node_num(node->left);
+    if(rank < left_num + 1)
+        return get_by_rank(node->left, rank);
+    else if(rank > left_num + 1)
+        return get_by_rank(node->right, rank - left_num - 1);
+    else
+        return node;
 }
 
 static RedBlackNode *

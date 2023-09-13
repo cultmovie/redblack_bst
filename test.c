@@ -80,6 +80,9 @@ int main() {
     Score * max_score = redblack_get_max(tree);
     printf("min in tree,roleid:%"PRId64",score:%"PRId64"\n", min_score->roleid, min_score->score);
     printf("max in tree,roleid:%"PRId64",score:%"PRId64"\n", max_score->roleid, max_score->score);
+    size_t rank = 9;
+    Score *rank_score = redblack_get_by_rank(tree, rank);
+    printf("rank:%ld,roleid:%"PRId64",score:%"PRId64"\n", rank, rank_score->roleid, rank_score->score);
     redblack_free(tree);
     return 0;
 }
