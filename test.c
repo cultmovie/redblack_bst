@@ -67,7 +67,7 @@ int main() {
     }
     //redblack_delete_min(tree);
     //redblack_delete_max(tree);
-    Score score = {5, 15};
+    Score score = {3, 13};
     redblack_delete(tree, &score);
     redblack_draw(tree, "redblack_tree_10.svg");
     for(int i = 0;i < 10;i++) {

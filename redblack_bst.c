@@ -168,7 +168,7 @@ delete(RedBlackBST *tree, RedBlackNode *node, void *data) {
     if(result < 0) {
         if(!is_red(node->left) && !is_red(node->left->left))
             node = move_red_from_right_to_left(node);
-        RedBlackNode *old_left = NULL;
+        RedBlackNode *old_left = node->left;
         node->left = delete(tree, node->left, data);
         if(node->left == NULL && old_left)
             free_one_node(tree, old_left);
@@ -186,7 +186,7 @@ delete(RedBlackBST *tree, RedBlackNode *node, void *data) {
             node->right = delete_min(tree, node->right);
         }
         else {
-            RedBlackNode *old_right = NULL;
+            RedBlackNode *old_right = node->right;
             node->right = delete(tree, node->right, data);
             if(node->right == NULL && old_right)
                 free_one_node(tree, old_right);
