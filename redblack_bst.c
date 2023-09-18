@@ -41,6 +41,10 @@ static RedBlackNode *move_red_from_left_to_right(RedBlackNode *node);
 static void free_one_node(RedBlackBST *tree, RedBlackNode *node);
 static RedBlackNode *delete(RedBlackBST *tree, RedBlackNode *node, void *data);
 static RedBlackNode *get_by_rank(RedBlackNode *node, size_t rank);
+static void get_range_by_score(RedBlackNode *node, void *min_data, void *max_data,
+    TraverseRangeFunc func, CmpScoreFunc cmp_score_func);
+static void get_range_by_rank(RedBlackNode *node, size_t start_rank, size_t end_rank, size_t left_rank,
+        TraverseRangeFunc func);
 
 RedBlackBST *
 redblack_new(CmpFunc cmp_func, UpdateFunc update_func,
@@ -120,10 +124,26 @@ redblack_delete(RedBlackBST *tree, void *data) {
 
 void *
 redblack_get_by_rank(RedBlackBST *tree, size_t rank) {
+    assert(rank >= 1 && rank <= tree->node_num);
     RedBlackNode *node = get_by_rank(tree->root, rank);
     if(node == NULL)
         return NULL;
     return node->data;
+}
+
+void
+redblack_get_range_by_rank(RedBlackBST *tree,
+        size_t start_rank, size_t end_rank, TraverseRangeFunc func) {
+    assert(start_rank >= 1 && start_rank <= tree->node_num);
+    assert(end_rank >= 1 && end_rank <= tree->node_num);
+    get_range_by_rank(tree->root, start_rank, end_rank, 0, func);
+}
+
+void
+redblack_get_range_by_score(RedBlackBST *tree,
+        void *min_data, void *max_data,
+        TraverseRangeFunc traverse_func, CmpScoreFunc cmp_score_func) {
+    get_range_by_score(tree->root, min_data, max_data, traverse_func, cmp_score_func);
 }
 
 void
@@ -171,6 +191,35 @@ redblack_is_red(RedBlackNode *node) {
     return is_red(node);
 }
 
+static void
+get_range_by_rank(RedBlackNode *node, size_t start_rank, size_t end_rank, size_t left_rank, TraverseRangeFunc func) {
+    if(node == NULL)
+        return;
+    size_t node_rank = get_sub_node_num(node->left) + 1 + left_rank;
+    if(node_rank > start_rank)
+        get_range_by_rank(node->left, start_rank, end_rank, left_rank, func);
+    if(node_rank >= start_rank && node_rank <= end_rank)
+        func(node->data);
+    if(node_rank < end_rank)
+        get_range_by_rank(node->right, start_rank, end_rank, node_rank, func);
+}
+
+static void
+get_range_by_score(RedBlackNode *node,
+        void *min_data, void *max_data,
+        TraverseRangeFunc traverse_func, CmpScoreFunc cmp_score_func) {
+    if(node == NULL)
+        return;
+    int result_min = cmp_score_func(node->data, min_data);
+    int result_max = cmp_score_func(node->data, max_data);
+    if(result_min >= 0)
+        get_range_by_score(node->left, min_data, max_data, traverse_func, cmp_score_func);
+    if(result_min >= 0 && result_max <= 0)
+        traverse_func(node->data);
+    if(result_max <= 0)
+        get_range_by_score(node->right, min_data, max_data, traverse_func, cmp_score_func);
+}
+
 static RedBlackNode *
 get_by_rank(RedBlackNode *node, size_t rank) {
     if(node == NULL)
@@ -192,8 +241,10 @@ delete(RedBlackBST *tree, RedBlackNode *node, void *data) {
             node = move_red_from_right_to_left(node);
         RedBlackNode *old_left = node->left;
         node->left = delete(tree, node->left, data);
-        if(node->left == NULL && old_left)
+        if(node->left == NULL && old_left) {
+            tree->node_num--;
             free_one_node(tree, old_left);
+        }
     }
     else {
         if(is_red(node->left))
@@ -210,8 +261,10 @@ delete(RedBlackBST *tree, RedBlackNode *node, void *data) {
         else {
             RedBlackNode *old_right = node->right;
             node->right = delete(tree, node->right, data);
-            if(node->right == NULL && old_right)
+            if(node->right == NULL && old_right) {
+                tree->node_num--;
                 free_one_node(tree, old_right);
+            }
         }
     }
     return balance(node);
@@ -227,8 +280,10 @@ delete_max(RedBlackBST *tree, RedBlackNode *node) {
         node = move_red_from_left_to_right(node);
     RedBlackNode *old_right = node->right;
     node->right = delete_max(tree, node->right);
-    if(node->right == NULL && old_right)
+    if(node->right == NULL && old_right) {
+        tree->node_num--;
         free_one_node(tree, old_right);
+    }
     return balance(node);
 }
 
@@ -240,8 +295,10 @@ delete_min(RedBlackBST *tree, RedBlackNode *node) {
         node = move_red_from_right_to_left(node);
     RedBlackNode *old_left = node->left;
     node->left = delete_min(tree, node->left);
-    if(node->left == NULL && old_left)
+    if(node->left == NULL && old_left) {
+        tree->node_num--;
         free_one_node(tree, old_left);
+    }
     return balance(node);
 }
 
@@ -348,8 +405,10 @@ new_node(void *data, Color color) {
 
 static RedBlackNode *
 insert(RedBlackBST *tree, RedBlackNode *node, void *data) {
-    if(node == NULL) 
+    if(node == NULL) {
+        tree->node_num++;
         return new_node(data, RED);
+    }
     int result = tree->cmp_func(data, node->data);
     if(result == 0)
         tree->update_func(node->data, data);

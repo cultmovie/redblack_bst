@@ -51,6 +51,24 @@ get_draw_str_func(RedBlackNode *node) {
     return (const char *)draw_buffer;
 }
 
+static int
+cmp_score_func(void *data1, void *data2) {
+    Score *score1 = (Score *)data1;
+    Score *score2 = (Score *)data2;
+    if(score1->score == score2->score)
+        return 0;
+    else if(score1->score > score2->score)
+        return 1;
+    else
+        return -1;
+}
+
+static void
+traverse_func(void *data) {
+    Score *score = (Score *)data;
+    printf("roleid:%"PRId64",score:%"PRId64"\n", score->roleid, score->score);
+}
+
 int main() {
     RedBlackBST *tree = redblack_new(cmp_func, update_func, free_func, get_draw_str_func);
     for(int i = 0;i < 10;i++) {
@@ -69,6 +87,15 @@ int main() {
     //redblack_delete_max(tree);
     Score score = {3, 13};
     redblack_delete(tree, &score);
+
+    Score *score_insert = malloc(sizeof(*score_insert));
+    score_insert->roleid = 12;
+    score_insert->score = 11;
+    redblack_insert(tree, score_insert);
+    Score *score_insert2 = malloc(sizeof(*score_insert2));
+    score_insert2->roleid = 13;
+    score_insert2->score = 18;
+    redblack_insert(tree, score_insert2);
     redblack_draw(tree, "redblack_tree_10.svg");
     for(int i = 0;i < 10;i++) {
         Score score = {i, i+10};
@@ -83,6 +110,12 @@ int main() {
     size_t rank = 9;
     Score *rank_score = redblack_get_by_rank(tree, rank);
     printf("rank:%ld,roleid:%"PRId64",score:%"PRId64"\n", rank, rank_score->roleid, rank_score->score);
+
+    Score score1 = {0, 11};
+    Score score2 = {0, 18};
+    redblack_get_range_by_score(tree, &score1, &score2, traverse_func, cmp_score_func);
+    printf("--------------\n");
+    redblack_get_range_by_rank(tree, 2, 11, traverse_func);
     redblack_free(tree);
     return 0;
 }
