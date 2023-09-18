@@ -9,3 +9,4 @@ $(TARGET) : $(SRC)
 
 clean :
 	rm -f $(TARGET)
+	rm -f redblack_tree*.svg
